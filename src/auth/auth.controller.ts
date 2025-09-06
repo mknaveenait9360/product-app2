@@ -1,4 +1,4 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 
 @Controller('auth')
@@ -7,36 +7,35 @@ export class AuthController {
 
   @Post('register')
   async register(@Body() body: any) {
-    console.log('Request Body:', body); // DEBUG
-    if (!body) return { message: 'Request body is missing' };
+    if (!body) throw new BadRequestException('Request body is missing');
 
     const { username, email, password } = body;
     if (!username || !email || !password) {
-      return { message: 'All fields are required' };
+      throw new BadRequestException('All fields are required');
     }
 
     try {
-      return await this.authService.register(username, email, password);
+      const user = await this.authService.register(username, email, password);
+      return { message: 'Registration successful', user };
     } catch (err) {
-      return { message: err.message };
+      throw new BadRequestException(err.message);
     }
   }
 
   @Post('login')
   async login(@Body() body: any) {
-    console.log('Login Body:', body); // DEBUG
-    if (!body) return { message: 'Request body is missing' };
+    if (!body) throw new BadRequestException('Request body is missing');
 
     const { email, password } = body;
-    if (!email || !password) return { message: 'Email and password required' };
+    if (!email || !password) throw new BadRequestException('Email and password required');
 
     try {
       const user = await this.authService.validateUser(email, password);
-      if (!user) return { message: 'Invalid credentials' };
+      if (!user) throw new UnauthorizedException('Invalid email or password');
 
       return await this.authService.login(user);
     } catch (err) {
-      return { message: err.message };
+      throw new BadRequestException(err.message);
     }
   }
 }

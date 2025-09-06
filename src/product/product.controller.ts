@@ -120,6 +120,52 @@ export class ProductController {
     }
   }
 
+  // Update product images - NEW ENDPOINT
+  @Put(':id/images')
+  @UseInterceptors(
+    FilesInterceptor('images', 10, {
+      storage: diskStorage({
+        destination: './uploads/products',
+        filename: (req, file, cb) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname);
+          cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
+        },
+      }),
+    }),
+  )
+  async updateImages(
+    @Param('id') id: number,
+    @Body() body: any,
+    @UploadedFiles() newImages: Express.Multer.File[],
+    @Req() req,
+  ) {
+    try {
+      // Get existing images to keep (sent from frontend)
+      const existingImages = body.existingImages ? JSON.parse(body.existingImages) : [];
+      
+      // Get new image filenames
+      const newImagePaths = newImages?.map((file) => file.filename) || [];
+      
+      // Combine existing and new images
+      const allImages = [...existingImages, ...newImagePaths];
+      
+      // Update the product with new image list
+      const result = await this.productService.updateImages(id, allImages);
+      
+      return {
+        message: 'Images updated successfully',
+        images: allImages,
+        ...result
+      };
+    } catch (error) {
+      return { 
+        message: `Error updating images for product ${id}`, 
+        error: error.message 
+      };
+    }
+  }
+
   // Delete product
   @Delete(':id')
   async remove(@Param('id') id: number, @Req() req) {

@@ -10,15 +10,15 @@ async function seed() {
  
     const hashed = await bcrypt.hash('admin123', 10);
     const admin = AppDataSource.manager.create(User, {
-      username: 'admin',
-      email: 'admin@example.com',
+      username: 'Superadmin',
+      email: 'superadmin@example.com',
       password: hashed,
-      role: 'admin', 
+      role: 'Superadmin', 
     });
     await AppDataSource.manager.save(admin);
 
     const product = AppDataSource.manager.create(Product, {
-  name: 'Sample Product',
+  name: 'Sample Product1',
   price: 100,
   stock: 10,
   image: undefined, 
