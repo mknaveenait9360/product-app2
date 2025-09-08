@@ -9,8 +9,8 @@ export class ProductSeeder {
       name: 'Sample Product',
       price: 199.99,
       stock: 50,
-      image: undefined,       
-      images: [],              
+      image: undefined,
+      images: [],
     });
 
     await productRepo.save(sampleProduct);

@@ -7,7 +7,7 @@ export class ProductProcessor {
   private readonly logger = new Logger(ProductProcessor.name);
 
   @Process('add-product-job')
-  async handleAddProduct(job: Job) {
+  handleAddProduct(job: Job) {
     this.logger.debug(`Processing Job: ${JSON.stringify(job.data)}`);
   }
 }

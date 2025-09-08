@@ -6,7 +6,9 @@ export class AdminSeeder {
   static async run(dataSource: DataSource) {
     const userRepo = dataSource.getRepository(User);
 
-    const existing = await userRepo.findOne({ where: { email: 'admin@example.com' } });
+    const existing = await userRepo.findOne({
+      where: { email: 'admin@example.com' },
+    });
     if (existing) {
       console.log('Admin already exists, skipping...');
       return;

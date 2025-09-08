@@ -14,16 +14,29 @@ export class AuthService {
   ) {}
 
   // Register a new user or admin
-  async register(username: string, email: string, password: string, role: string = 'user') {
+  async register(
+    username: string,
+    email: string,
+    password: string,
+    role: string = 'user',
+  ) {
     try {
       const existing = await this.userRepo.findOne({ where: { email } });
       if (existing) throw new BadRequestException('Email already exists');
 
       const hashed = await bcrypt.hash(password, 10);
-      const user = this.userRepo.create({ username, email, password: hashed, role });
+      const user = this.userRepo.create({
+        username,
+        email,
+        password: hashed,
+        role,
+      });
       return await this.userRepo.save(user);
-    } catch (err) {
-      throw new BadRequestException('Registration failed: ' + err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        throw new BadRequestException('Registration failed' + err.message);
+      }
+      throw new BadRequestException('An unkown error Occured');
     }
   }
 
@@ -37,7 +50,7 @@ export class AuthService {
   }
 
   // Login and return JWT token
-  async login(user: User) {
+  login(user: User) {
     const payload = { email: user.email, sub: user.id, role: user.role };
     return { access_token: this.jwtService.sign(payload) };
   }

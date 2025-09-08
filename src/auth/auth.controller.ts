@@ -1,12 +1,19 @@
-import { Controller, Post, Body, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  BadRequestException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { RegisterDto } from './dto/create-dto.auth';
 
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post('register')
-  async register(@Body() body: any) {
+  async register(@Body() body: RegisterDto) {
     if (!body) throw new BadRequestException('Request body is missing');
 
     const { username, email, password } = body;
@@ -17,25 +24,32 @@ export class AuthController {
     try {
       const user = await this.authService.register(username, email, password);
       return { message: 'Registration successful', user };
-    } catch (err) {
-      throw new BadRequestException(err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        throw new BadRequestException(err.message);
+      }
+      throw new BadRequestException('An unexpected error occurred');
     }
   }
 
   @Post('login')
-  async login(@Body() body: any) {
+  async login(@Body() body: RegisterDto) {
     if (!body) throw new BadRequestException('Request body is missing');
 
     const { email, password } = body;
-    if (!email || !password) throw new BadRequestException('Email and password required');
+    if (!email || !password)
+      throw new BadRequestException('Email and password required');
 
     try {
       const user = await this.authService.validateUser(email, password);
       if (!user) throw new UnauthorizedException('Invalid email or password');
 
-      return await this.authService.login(user);
-    } catch (err) {
-      throw new BadRequestException(err.message);
+      return this.authService.login(user);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        throw new BadRequestException(err.message);
+      }
+      throw new BadRequestException('An unexpected error occurred');
     }
   }
 }

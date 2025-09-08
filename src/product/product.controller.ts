@@ -21,7 +21,7 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
-@UseGuards(JwtAuthGuard) // ✅ Protect all routes
+@UseGuards(JwtAuthGuard) // Protect all routes
 @Controller('products')
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
@@ -46,10 +46,9 @@ export class ProductController {
     @Req() req,
   ) {
     try {
+      dto.userId = req.user.id; // assign userId inside DTO
       const imagePath = image ? image.filename : undefined;
-      // Optionally attach creator user
-      const userId = req.user.id;
-      return await this.productService.create(dto, imagePath, [], userId);
+      return await this.productService.create(dto, imagePath, []);
     } catch (error) {
       return { message: 'Error creating product', error: error.message };
     }
@@ -75,9 +74,9 @@ export class ProductController {
     @Req() req,
   ) {
     try {
+      dto.userId = req.user.id; // assign userId inside DTO
       const imagePaths = images?.map((file) => file.filename) || [];
-      const userId = req.user.id;
-      return await this.productService.create(dto, undefined, imagePaths, userId);
+      return await this.productService.create(dto, undefined, imagePaths);
     } catch (error) {
       return {
         message: 'Error creating product with multiple images',
@@ -86,21 +85,20 @@ export class ProductController {
     }
   }
 
-  // Get all with filters
+  // Get all products with optional filters
   @Get()
   async findAll(
     @Query() filters: { name?: string; price?: number; stock?: number },
     @Req() req,
   ) {
     try {
-      const userId = req.user.id; // optional usage
       return await this.productService.findAll(filters);
     } catch (error) {
       return { message: 'Error fetching products', error: error.message };
     }
   }
 
-  // Get one by ID
+  // Get one product by ID
   @Get(':id')
   async findOne(@Param('id') id: number, @Req() req) {
     try {
@@ -117,52 +115,6 @@ export class ProductController {
       return await this.productService.update(id, dto);
     } catch (error) {
       return { message: `Error updating product with id ${id}`, error: error.message };
-    }
-  }
-
-  // Update product images - NEW ENDPOINT
-  @Put(':id/images')
-  @UseInterceptors(
-    FilesInterceptor('images', 10, {
-      storage: diskStorage({
-        destination: './uploads/products',
-        filename: (req, file, cb) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-          const ext = extname(file.originalname);
-          cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
-        },
-      }),
-    }),
-  )
-  async updateImages(
-    @Param('id') id: number,
-    @Body() body: any,
-    @UploadedFiles() newImages: Express.Multer.File[],
-    @Req() req,
-  ) {
-    try {
-      // Get existing images to keep (sent from frontend)
-      const existingImages = body.existingImages ? JSON.parse(body.existingImages) : [];
-      
-      // Get new image filenames
-      const newImagePaths = newImages?.map((file) => file.filename) || [];
-      
-      // Combine existing and new images
-      const allImages = [...existingImages, ...newImagePaths];
-      
-      // Update the product with new image list
-      const result = await this.productService.updateImages(id, allImages);
-      
-      return {
-        message: 'Images updated successfully',
-        images: allImages,
-        ...result
-      };
-    } catch (error) {
-      return { 
-        message: `Error updating images for product ${id}`, 
-        error: error.message 
-      };
     }
   }
 
